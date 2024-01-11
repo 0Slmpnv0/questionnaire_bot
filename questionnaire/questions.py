@@ -1,4 +1,7 @@
-questions = {
+import telebot
+from telebot import util
+
+questions_dict = {
     '1. Как ты реагируешь на неудачу или трудности?': [
         '1a. Отчаиваюсь и теряю мотивацию.',
         '1b. Пытаюсь найти положительные стороны и уроки из ситуации.',
@@ -75,3 +78,43 @@ questions = {
         '15c. Рассматриваю трудности как возможность для роста и самосовершенствования.'
     ],
 }
+
+
+def return_nums(callback):
+    return int(''.join([x for x in callback if x in list(map(str, range(10)))]))
+
+
+class Question:
+    def __init__(self, question: dict[str: list[str]]):
+        self.number = return_nums(list(question.keys())[0][:4])
+        self.full_question = list(question.keys())[0]
+        self.question = list(question.keys())[0][3:].lstrip()
+        self.answers = question[self.full_question]
+        self.current_answer = ''
+
+    def gen_markup(self) -> telebot.types.InlineKeyboardMarkup:
+        if self.number == 15:
+            return util.quick_markup({
+                f'{self.answers[0][0:4].rstrip()}': {'callback_data': f'{self.answers[0][0:4].rstrip()}'},
+                f'{self.answers[1][0:4].rstrip()}': {'callback_data': f'{self.answers[1][0:4].rstrip()}'},
+                f'{self.answers[2][0:4].rstrip()}': {'callback_data': f'{self.answers[2][0:4].rstrip()}'},
+                'Остановить тестирование': {'callback_data': 'exit'},
+                'Подтвердить ответы': {'callback_data': 'confirm'}
+            }, row_width=1)
+        return util.quick_markup({
+            f'{self.answers[0][0:4].rstrip()}': {'callback_data': f'{self.answers[0][0:4].rstrip()}'},
+            f'{self.answers[1][0:4].rstrip()}': {'callback_data': f'{self.answers[1][0:4].rstrip()}'},
+            f'{self.answers[2][0:4].rstrip()}': {'callback_data': f'{self.answers[2][0:4].rstrip()}'},
+            'Остановить тестирование': {'callback_data': 'exit'},
+            'Вперед': {'callback_data': f'{self.number}'}
+        }, row_width=1)
+
+    def gen_text(self):
+        if self.current_answer:
+            return f'{self.question}\n{self.answers[0]}\n{self.answers[1]}\n{self.answers[2]}\nТекущий ответ: {self.current_answer}'
+        return f'{self.question}\n{self.answers[0]}\n{self.answers[1]}\n{self.answers[2]}'
+
+
+questions = []
+for i in range(15):
+    questions.append(Question({list(questions_dict.keys())[i]: questions_dict[list(questions_dict.keys())[i]]}))
